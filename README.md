@@ -1,3 +1,19 @@
+# Forked from @neo4j/graphql
+This was forked so that @auth directives could be added to implment node level authorization, as this was not implmented at the time of writing.  PR: 500 was used as a starting point but only the code from create-auth-and-params.ts was brought across. https://github.com/neo4j/graphql/pull/500
+
+The custom code has been added on v2.3.0 of the library: 
+https://github.com/neo4j/graphql/tree/%40neo4j/graphql%402.3.0
+
+## Deploying this Fork
+1. In the root folder, run: `yarn`
+1. Ensure that all tests pass: `yarn test`
+1. Then run: `yarn build`
+1. From the `packages/graphql` folder, copy the `dist` folder and the `package.json` file into project you want to use it in
+1. Then run: `npm i`
+---
+---
+---
+
 # Neo4j GraphQL Library
 
 💡 Welcome to the Monorepo for [Neo4j](https://neo4j.com/) + [GraphQL](https://graphql.org/).
