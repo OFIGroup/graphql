@@ -2045,6 +2045,80 @@ describe("createAuthAndParams", () => {
                         this_auth_where0_ids_ANY: subs,
                     });
                 });
+
+                test("_NOT_ANY", () => {
+                    const idFields = {
+                        fieldName: "ids",
+                        typeMeta: {
+                            name: "ID",
+                            array: true,
+                            required: false,
+                            pretty: "String",
+                            input: {
+                                where: {
+                                    type: "String",
+                                    pretty: "String",
+                                },
+                                create: {
+                                    type: "String",
+                                    pretty: "String",
+                                },
+                                update: {
+                                    type: "String",
+                                    pretty: "String",
+                                },
+                            },
+                        },
+                        otherDirectives: [],
+                        arguments: [],
+                    };
+
+                    const subs = Array(3).map(() => generate({ charset: "alphabetic" }));
+
+                    const node = new NodeBuilder({
+                        name: "Movie",
+                        relationFields: [],
+                        cypherFields: [],
+                        enumFields: [],
+                        scalarFields: [],
+                        primitiveFields: [idFields],
+                        temporalFields: [],
+                        interfaceFields: [],
+                        objectFields: [],
+                        pointFields: [],
+                        auth: {
+                            rules: [{ where: { ids_NOT_ANY: subs } }],
+                            type: "JWT",
+                        },
+                    }).instance();
+
+                    // @ts-ignore
+                    const neoSchema: Neo4jGraphQL = {
+                        nodes: [node],
+                    };
+
+                    // @ts-ignore
+                    const context: Context = { neoSchema };
+                    context.jwt = {
+                        sub: subs[0],
+                    };
+
+                    const result = createAuthAndParams({
+                        context,
+                        entity: node,
+                        where: { node, varName: "this" },
+                    });
+
+                    expect(trimmer(result[0])).toEqual(
+                        trimmer(`
+                      this.ids IS NOT NULL AND NOT ANY(x IN $this_auth_where0_ids_NOT_ANY WHERE x IN this.ids)
+                `)
+                    );
+
+                    expect(result[1]).toMatchObject({
+                        this_auth_where0_ids_NOT_ANY: subs,
+                    });
+                });
             });
 
             describe("relation field", () => {
