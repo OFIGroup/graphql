@@ -23,7 +23,16 @@ import { AuthOperations, BaseField, AuthRule, BaseAuthRule, Context } from "../t
 import { AUTH_UNAUTHENTICATED_ERROR } from "../constants";
 import mapToDbProperty from "../utils/map-to-db-property";
 
-type AuthFieldModifier = "_NOT" | "_IN" | "_NOT_IN" | "_INCLUDES" | "_NOT_INCLUDES" | "_EVERY" | "_NOT_EVERY";
+type AuthFieldModifier =
+    | "_NOT"
+    | "_IN"
+    | "_NOT_IN"
+    | "_INCLUDES"
+    | "_NOT_INCLUDES"
+    | "_EVERY"
+    | "_NOT_EVERY"
+    | "_ANY"
+    | "_NOT_ANY";
 
 const AUTH_FIELD_MODIFIERS: AuthFieldModifier[] = [
     "_NOT",
@@ -33,6 +42,8 @@ const AUTH_FIELD_MODIFIERS: AuthFieldModifier[] = [
     "_NOT_INCLUDES",
     "_EVERY",
     "_NOT_EVERY",
+    "_ANY",
+    "_NOT_ANY",
 ];
 
 interface Res {
@@ -144,6 +155,14 @@ function createAuthPredicate({
                         `${varName}.${dbFieldName} IS NOT NULL AND ${
                             fieldModifier === "_NOT_IN" ? "NOT" : ""
                         } ${varName}.${dbFieldName} IN $${param}`
+                    );
+                } else if (fieldModifier && ["_ANY", "_NOT_ANY"].includes(fieldModifier)) {
+                    const param = `${chainStr}_${key}`;
+                    res.params[param] = paramValue;
+                    res.strs.push(
+                        `${varName}.${dbFieldName} IS NOT NULL AND ${
+                            fieldModifier === "_NOT_ANY" ? "NOT" : ""
+                        } ANY(x IN $${param} WHERE x IN ${varName}.${dbFieldName})`
                     );
                 } else {
                     const param = `${chainStr}_${key}`;
