@@ -445,6 +445,84 @@ describe("auth/where", () => {
                 await session.close();
             }
         });
+
+        test("_ANY should return data only if match is found", async () => {
+            const session = driver.session({ defaultAccessMode: "WRITE" });
+
+            const typeDefs = `
+              type User {
+                  id: ID
+                  authGroups: [String]
+              }
+
+              extend type User @auth(rules: [{ where: { authGroups_ANY: "$jwt.groups" } }])
+          `;
+
+            const userId1 = generate({
+                charset: "alphabetic",
+            });
+            const userId2 = generate({
+                charset: "alphabetic",
+            });
+            const userId3 = generate({
+                charset: "alphabetic",
+            });
+            const userId4 = generate({
+                charset: "alphabetic",
+            });
+            const group1 = generate({
+                charset: "alphabetic",
+            });
+            const group2 = generate({
+                charset: "alphabetic",
+            });
+
+            const query = `
+              {
+                  users {
+                      id
+                  }
+              }
+          `;
+
+            const secret = "secret";
+
+            const token = jsonwebtoken.sign(
+                {
+                    roles: [],
+                    groups: [group1],
+                },
+                secret
+            );
+
+            const neoSchema = new Neo4jGraphQL({ typeDefs, config: { jwt: { secret } } });
+
+            try {
+                await session.run(`
+                  CREATE (:User {id: "${userId1}", authGroups:["${group1}"]})
+                  CREATE (:User {id: "${userId2}", authGroups:["${group2}"]})
+                  CREATE (:User {id: "${userId3}", authGroups:[]})
+                  CREATE (:User {id: "${userId4}"})
+              `);
+
+                const socket = new Socket({ readable: true });
+                const req = new IncomingMessage(socket);
+                req.headers.authorization = `Bearer ${token}`;
+
+                const gqlResult = await graphql({
+                    schema: neoSchema.schema,
+                    source: query,
+                    contextValue: { driver, req, driverConfig: { bookmarks: session.lastBookmark() } },
+                });
+
+                expect(gqlResult.errors).toBeUndefined();
+
+                const users = (gqlResult.data as any).users as any[];
+                expect(users).toEqual([{ id: userId1 }]);
+            } finally {
+                await session.close();
+            }
+        });
     });
 
     describe("update", () => {
