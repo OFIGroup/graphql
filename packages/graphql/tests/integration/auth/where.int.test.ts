@@ -43,7 +43,7 @@ describe("auth/where", () => {
 
         keys.forEach((key) => {
             if (Array.isArray(obj[key])) {
-                str += `${key}: [${obj[key].map((item) => `"${item}"`)}],`;
+                str += `${key}: [${obj[key].map((item) => `"${item}"`)}],`; // assumes elements are strings
             } else {
                 str += `${key}: "${obj[key]}",`;
             }
@@ -476,30 +476,24 @@ describe("auth/where", () => {
               extend type User @auth(rules: [{ where: { authGroups_ANY: "$jwt.groups" } }])
           `;
 
-            // const userId1 = generate({
-            //     charset: "alphabetic",
-            // });
-            // const userId2 = generate({
-            //     charset: "alphabetic",
-            // });
-            // const userId3 = generate({
-            //     charset: "alphabetic",
-            // });
-            // const userId4 = generate({
-            //     charset: "alphabetic",
-            // });
-            // const group1 = generate({
-            //     charset: "alphabetic",
-            // });
-            // const group2 = generate({
-            //     charset: "alphabetic",
-            // });
-            const userId1 = "userId1";
-            const userId2 = "userId2";
-            const userId3 = "userId3";
-            const userId4 = "userId4";
-            const group1 = "group1";
-            const group2 = "group2";
+            const userId1 = generate({
+                charset: "alphabetic",
+            });
+            const userId2 = generate({
+                charset: "alphabetic",
+            });
+            const userId3 = generate({
+                charset: "alphabetic",
+            });
+            const userId4 = generate({
+                charset: "alphabetic",
+            });
+            const group1 = generate({
+                charset: "alphabetic",
+            });
+            const group2 = generate({
+                charset: "alphabetic",
+            });
 
             const user1 = { id: userId1, authGroups: [group1] };
             const user2 = { id: userId2, authGroups: [group2] };
@@ -529,10 +523,10 @@ describe("auth/where", () => {
 
             try {
                 const createNodes = `
-              CREATE (:User {${stringifyGraphQL(user1)}})
-              CREATE (:User {${stringifyGraphQL(user2)}})
-              CREATE (:User {${stringifyGraphQL(user3)}})
-              CREATE (:User {${stringifyGraphQL(user4)}})`;
+                  CREATE (:User {${stringifyGraphQL(user1)}})
+                  CREATE (:User {${stringifyGraphQL(user2)}})
+                  CREATE (:User {${stringifyGraphQL(user3)}})
+                  CREATE (:User {${stringifyGraphQL(user4)}})`;
 
                 await session.run(createNodes);
 
