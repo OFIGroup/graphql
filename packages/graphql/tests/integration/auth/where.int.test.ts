@@ -37,6 +37,24 @@ describe("auth/where", () => {
         await driver.close();
     });
 
+    const stringifyGraphQL = (obj: any) => {
+        let str = "";
+        const keys = Object.keys(obj);
+
+        keys.forEach((key) => {
+            if (Array.isArray(obj[key])) {
+                str += `${key}: [${obj[key].map((item) => `"${item}"`)}],`;
+            } else {
+                str += `${key}: "${obj[key]}",`;
+            }
+        });
+
+        // remove last character (comma)
+        str = str.slice(0, -1);
+
+        return str;
+    };
+
     describe("read", () => {
         test("should add $jwt.id to where and return user", async () => {
             const session = driver.session({ defaultAccessMode: "WRITE" });
@@ -446,7 +464,7 @@ describe("auth/where", () => {
             }
         });
 
-        test("_ANY should return data only if match is found", async () => {
+        test("_ANY should return data only if authGroups match or empty or does not exist", async () => {
             const session = driver.session({ defaultAccessMode: "WRITE" });
 
             const typeDefs = `
@@ -458,29 +476,41 @@ describe("auth/where", () => {
               extend type User @auth(rules: [{ where: { authGroups_ANY: "$jwt.groups" } }])
           `;
 
-            const userId1 = generate({
-                charset: "alphabetic",
-            });
-            const userId2 = generate({
-                charset: "alphabetic",
-            });
-            const userId3 = generate({
-                charset: "alphabetic",
-            });
-            const userId4 = generate({
-                charset: "alphabetic",
-            });
-            const group1 = generate({
-                charset: "alphabetic",
-            });
-            const group2 = generate({
-                charset: "alphabetic",
-            });
+            // const userId1 = generate({
+            //     charset: "alphabetic",
+            // });
+            // const userId2 = generate({
+            //     charset: "alphabetic",
+            // });
+            // const userId3 = generate({
+            //     charset: "alphabetic",
+            // });
+            // const userId4 = generate({
+            //     charset: "alphabetic",
+            // });
+            // const group1 = generate({
+            //     charset: "alphabetic",
+            // });
+            // const group2 = generate({
+            //     charset: "alphabetic",
+            // });
+            const userId1 = "userId1";
+            const userId2 = "userId2";
+            const userId3 = "userId3";
+            const userId4 = "userId4";
+            const group1 = "group1";
+            const group2 = "group2";
+
+            const user1 = { id: userId1, authGroups: [group1] };
+            const user2 = { id: userId2, authGroups: [group2] };
+            const user3 = { id: userId3, authGroups: [] };
+            const user4 = { id: userId4 };
 
             const query = `
               {
                   users {
                       id
+                      authGroups
                   }
               }
           `;
@@ -498,12 +528,13 @@ describe("auth/where", () => {
             const neoSchema = new Neo4jGraphQL({ typeDefs, config: { jwt: { secret } } });
 
             try {
-                await session.run(`
-                  CREATE (:User {id: "${userId1}", authGroups:["${group1}"]})
-                  CREATE (:User {id: "${userId2}", authGroups:["${group2}"]})
-                  CREATE (:User {id: "${userId3}", authGroups:[]})
-                  CREATE (:User {id: "${userId4}"})
-              `);
+                const createNodes = `
+              CREATE (:User {${stringifyGraphQL(user1)}})
+              CREATE (:User {${stringifyGraphQL(user2)}})
+              CREATE (:User {${stringifyGraphQL(user3)}})
+              CREATE (:User {${stringifyGraphQL(user4)}})`;
+
+                await session.run(createNodes);
 
                 const socket = new Socket({ readable: true });
                 const req = new IncomingMessage(socket);
@@ -518,7 +549,18 @@ describe("auth/where", () => {
                 expect(gqlResult.errors).toBeUndefined();
 
                 const users = (gqlResult.data as any).users as any[];
-                expect(users).toEqual([{ id: userId1 }]);
+
+                expect(users).toContainEqual(user1);
+                expect(users).toContainEqual(user3);
+                expect(users).toContainEqual({ ...user4, authGroups: null });
+
+                // Any Users defined by other tests without authGroups property
+                const usersWithoutAuthGroups = users.filter(
+                    (user) => user.id !== userId1 && user.id !== userId3 && user.id !== userId4
+                );
+                usersWithoutAuthGroups.forEach((user) => {
+                    expect([[], null]).toContainEqual(user?.authGroups);
+                });
             } finally {
                 await session.close();
             }

@@ -156,14 +156,12 @@ function createAuthPredicate({
                             fieldModifier === "_NOT_IN" ? "NOT" : ""
                         } ${varName}.${dbFieldName} IN $${param}`
                     );
-                } else if (fieldModifier && ["_ANY", "_NOT_ANY"].includes(fieldModifier)) {
+                } else if (fieldModifier && ["_ANY"].includes(fieldModifier)) {
                     const param = `${chainStr}_${key}`;
                     res.params[param] = paramValue;
-                    res.strs.push(
-                        `${varName}.${dbFieldName} IS NOT NULL AND ${
-                            fieldModifier === "_NOT_ANY" ? "NOT" : ""
-                        } ANY(x IN $${param} WHERE x IN ${varName}.${dbFieldName})`
-                    );
+                    res.strs.push(`((${varName}.${dbFieldName} IS NOT NULL AND  ${varName}.${dbFieldName} = []) 
+OR (${varName}.${dbFieldName} IS NOT NULL AND ANY(x IN $${param} WHERE x IN ${varName}.${dbFieldName}))
+OR ${varName}.${dbFieldName} IS NULL)`);
                 } else {
                     const param = `${chainStr}_${key}`;
                     res.params[param] = paramValue;
