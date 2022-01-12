@@ -2046,890 +2046,890 @@ describe("createAuthAndParams", () => {
                     });
                 });
 
-            
-            describe("relation field", () => {
-                test("default", () => {
-                    const idField: PrimitiveField = {
-                        fieldName: "id",
-                        typeMeta: {
-                            name: "ID",
-                            array: false,
-                            required: false,
-                            pretty: "String",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
+                describe("relation field", () => {
+                    test("default", () => {
+                        const idField: PrimitiveField = {
+                            fieldName: "id",
+                            typeMeta: {
+                                name: "ID",
+                                array: false,
+                                required: false,
+                                pretty: "String",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
                                 },
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                            otherDirectives: [],
+                            arguments: [],
+                        };
 
-                    const idsField: RelationField = {
-                        fieldName: "ids",
-                        direction: "OUT",
-                        type: "HAS_ID",
-                        typeMeta: {
+                        const idsField: RelationField = {
+                            fieldName: "ids",
+                            direction: "OUT",
+                            type: "HAS_ID",
+                            typeMeta: {
+                                name: "MovieID",
+                                array: true,
+                                required: false,
+                                pretty: "MovieID",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                },
+                            },
+                            otherDirectives: [],
+                            arguments: [],
+                        };
+
+                        const movieIdNode = new NodeBuilder({
                             name: "MovieID",
-                            array: true,
-                            required: false,
-                            pretty: "MovieID",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
+                            relationFields: [],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [idField],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                        }).instance();
+
+                        const node = new NodeBuilder({
+                            name: "Movie",
+                            relationFields: [idsField],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                            auth: {
+                                rules: [{ where: { ids: { id: "$jwt.sub" } } }],
+                                type: "JWT",
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                        }).instance();
 
-                    const movieIdNode = new NodeBuilder({
-                        name: "MovieID",
-                        relationFields: [],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [idField],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                    }).instance();
+                        // @ts-ignore
+                        const neoSchema: Neo4jGraphQL = {
+                            nodes: [movieIdNode, node],
+                        };
 
-                    const node = new NodeBuilder({
-                        name: "Movie",
-                        relationFields: [idsField],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                        auth: {
-                            rules: [{ where: { ids: { id: "$jwt.sub" } } }],
-                            type: "JWT",
-                        },
-                    }).instance();
+                        const sub = generate({
+                            charset: "alphabetic",
+                        });
 
-                    // @ts-ignore
-                    const neoSchema: Neo4jGraphQL = {
-                        nodes: [movieIdNode, node],
-                    };
+                        // @ts-ignore
+                        const context: Context = { neoSchema };
+                        context.jwt = {
+                            sub,
+                        };
 
-                    const sub = generate({
-                        charset: "alphabetic",
-                    });
+                        const result = createAuthAndParams({
+                            context,
+                            entity: node,
+                            where: { node, varName: "this" },
+                        });
 
-                    // @ts-ignore
-                    const context: Context = { neoSchema };
-                    context.jwt = {
-                        sub,
-                    };
-
-                    const result = createAuthAndParams({
-                        context,
-                        entity: node,
-                        where: { node, varName: "this" },
-                    });
-
-                    expect(trimmer(result[0])).toEqual(
-                        trimmer(`
+                        expect(trimmer(result[0])).toEqual(
+                            trimmer(`
                         EXISTS((this)-[:HAS_ID]->(:MovieID)) AND ALL(ids IN [(this)-[:HAS_ID]->(ids:MovieID) | ids] WHERE ids.id IS NOT NULL AND ids.id = $this_auth_where0_ids_id)
                     `)
-                    );
+                        );
 
-                    expect(result[1]).toMatchObject({
-                        this_auth_where0_ids_id: sub,
+                        expect(result[1]).toMatchObject({
+                            this_auth_where0_ids_id: sub,
+                        });
                     });
-                });
 
-                test("null", () => {
-                    const idField: PrimitiveField = {
-                        fieldName: "id",
-                        typeMeta: {
-                            name: "ID",
-                            array: false,
-                            required: false,
-                            pretty: "String",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
+                    test("null", () => {
+                        const idField: PrimitiveField = {
+                            fieldName: "id",
+                            typeMeta: {
+                                name: "ID",
+                                array: false,
+                                required: false,
+                                pretty: "String",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
                                 },
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                            otherDirectives: [],
+                            arguments: [],
+                        };
 
-                    const idsField: RelationField = {
-                        fieldName: "ids",
-                        direction: "OUT",
-                        type: "HAS_ID",
-                        typeMeta: {
+                        const idsField: RelationField = {
+                            fieldName: "ids",
+                            direction: "OUT",
+                            type: "HAS_ID",
+                            typeMeta: {
+                                name: "MovieID",
+                                array: true,
+                                required: false,
+                                pretty: "MovieID",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                },
+                            },
+                            otherDirectives: [],
+                            arguments: [],
+                        };
+
+                        const movieIdNode = new NodeBuilder({
                             name: "MovieID",
-                            array: true,
-                            required: false,
-                            pretty: "MovieID",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
+                            relationFields: [],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [idField],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                        }).instance();
+
+                        const node = new NodeBuilder({
+                            name: "Movie",
+                            relationFields: [idsField],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                            auth: {
+                                rules: [{ where: { ids: null } }],
+                                type: "JWT",
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                        }).instance();
 
-                    const movieIdNode = new NodeBuilder({
-                        name: "MovieID",
-                        relationFields: [],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [idField],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                    }).instance();
+                        // @ts-ignore
+                        const neoSchema: Neo4jGraphQL = {
+                            nodes: [movieIdNode, node],
+                        };
 
-                    const node = new NodeBuilder({
-                        name: "Movie",
-                        relationFields: [idsField],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                        auth: {
-                            rules: [{ where: { ids: null } }],
-                            type: "JWT",
-                        },
-                    }).instance();
+                        const sub = generate({
+                            charset: "alphabetic",
+                        });
 
-                    // @ts-ignore
-                    const neoSchema: Neo4jGraphQL = {
-                        nodes: [movieIdNode, node],
-                    };
+                        // @ts-ignore
+                        const context: Context = { neoSchema };
+                        context.jwt = {
+                            sub,
+                        };
 
-                    const sub = generate({
-                        charset: "alphabetic",
-                    });
+                        const result = createAuthAndParams({
+                            context,
+                            entity: node,
+                            where: { node, varName: "this" },
+                        });
 
-                    // @ts-ignore
-                    const context: Context = { neoSchema };
-                    context.jwt = {
-                        sub,
-                    };
-
-                    const result = createAuthAndParams({
-                        context,
-                        entity: node,
-                        where: { node, varName: "this" },
-                    });
-
-                    expect(trimmer(result[0])).toEqual(
-                        trimmer(`
+                        expect(trimmer(result[0])).toEqual(
+                            trimmer(`
                         NOT EXISTS((this)-[:HAS_ID]->(:MovieID))
                     `)
-                    );
+                        );
 
-                    expect(result[1]).toMatchObject({});
-                });
+                        expect(result[1]).toMatchObject({});
+                    });
 
-                test("_NOT null", () => {
-                    const idField: PrimitiveField = {
-                        fieldName: "id",
-                        typeMeta: {
-                            name: "ID",
-                            array: false,
-                            required: false,
-                            pretty: "String",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
+                    test("_NOT null", () => {
+                        const idField: PrimitiveField = {
+                            fieldName: "id",
+                            typeMeta: {
+                                name: "ID",
+                                array: false,
+                                required: false,
+                                pretty: "String",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
                                 },
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                            otherDirectives: [],
+                            arguments: [],
+                        };
 
-                    const idsField: RelationField = {
-                        fieldName: "ids",
-                        direction: "OUT",
-                        type: "HAS_ID",
-                        typeMeta: {
+                        const idsField: RelationField = {
+                            fieldName: "ids",
+                            direction: "OUT",
+                            type: "HAS_ID",
+                            typeMeta: {
+                                name: "MovieID",
+                                array: true,
+                                required: false,
+                                pretty: "MovieID",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                },
+                            },
+                            otherDirectives: [],
+                            arguments: [],
+                        };
+
+                        const movieIdNode = new NodeBuilder({
                             name: "MovieID",
-                            array: true,
-                            required: false,
-                            pretty: "MovieID",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
+                            relationFields: [],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [idField],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                        }).instance();
+
+                        const node = new NodeBuilder({
+                            name: "Movie",
+                            relationFields: [idsField],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                            auth: {
+                                rules: [{ where: { ids_NOT: null } }],
+                                type: "JWT",
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                        }).instance();
 
-                    const movieIdNode = new NodeBuilder({
-                        name: "MovieID",
-                        relationFields: [],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [idField],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                    }).instance();
+                        // @ts-ignore
+                        const neoSchema: Neo4jGraphQL = {
+                            nodes: [movieIdNode, node],
+                        };
 
-                    const node = new NodeBuilder({
-                        name: "Movie",
-                        relationFields: [idsField],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                        auth: {
-                            rules: [{ where: { ids_NOT: null } }],
-                            type: "JWT",
-                        },
-                    }).instance();
+                        const sub = generate({
+                            charset: "alphabetic",
+                        });
 
-                    // @ts-ignore
-                    const neoSchema: Neo4jGraphQL = {
-                        nodes: [movieIdNode, node],
-                    };
+                        // @ts-ignore
+                        const context: Context = { neoSchema };
+                        context.jwt = {
+                            sub,
+                        };
 
-                    const sub = generate({
-                        charset: "alphabetic",
-                    });
+                        const result = createAuthAndParams({
+                            context,
+                            entity: node,
+                            where: { node, varName: "this" },
+                        });
 
-                    // @ts-ignore
-                    const context: Context = { neoSchema };
-                    context.jwt = {
-                        sub,
-                    };
-
-                    const result = createAuthAndParams({
-                        context,
-                        entity: node,
-                        where: { node, varName: "this" },
-                    });
-
-                    expect(trimmer(result[0])).toEqual(
-                        trimmer(`
+                        expect(trimmer(result[0])).toEqual(
+                            trimmer(`
                         EXISTS((this)-[:HAS_ID]->(:MovieID))
                     `)
-                    );
+                        );
 
-                    expect(result[1]).toMatchObject({});
-                });
+                        expect(result[1]).toMatchObject({});
+                    });
 
-                test("_INCLUDES", () => {
-                    const idField: PrimitiveField = {
-                        fieldName: "id",
-                        typeMeta: {
-                            name: "ID",
-                            array: false,
-                            required: false,
-                            pretty: "String",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
+                    test("_INCLUDES", () => {
+                        const idField: PrimitiveField = {
+                            fieldName: "id",
+                            typeMeta: {
+                                name: "ID",
+                                array: false,
+                                required: false,
+                                pretty: "String",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
                                 },
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                            otherDirectives: [],
+                            arguments: [],
+                        };
 
-                    const idsField: RelationField = {
-                        fieldName: "ids",
-                        direction: "OUT",
-                        type: "HAS_ID",
-                        typeMeta: {
+                        const idsField: RelationField = {
+                            fieldName: "ids",
+                            direction: "OUT",
+                            type: "HAS_ID",
+                            typeMeta: {
+                                name: "MovieID",
+                                array: true,
+                                required: false,
+                                pretty: "MovieID",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                },
+                            },
+                            otherDirectives: [],
+                            arguments: [],
+                        };
+
+                        const movieIdNode = new NodeBuilder({
                             name: "MovieID",
-                            array: true,
-                            required: false,
-                            pretty: "MovieID",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
+                            relationFields: [],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [idField],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                        }).instance();
+
+                        const node = new NodeBuilder({
+                            name: "Movie",
+                            relationFields: [idsField],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                            auth: {
+                                rules: [{ where: { ids_INCLUDES: { id: "$jwt.sub" } } }],
+                                type: "JWT",
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                        }).instance();
 
-                    const movieIdNode = new NodeBuilder({
-                        name: "MovieID",
-                        relationFields: [],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [idField],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                    }).instance();
+                        // @ts-ignore
+                        const neoSchema: Neo4jGraphQL = {
+                            nodes: [movieIdNode, node],
+                        };
 
-                    const node = new NodeBuilder({
-                        name: "Movie",
-                        relationFields: [idsField],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                        auth: {
-                            rules: [{ where: { ids_INCLUDES: { id: "$jwt.sub" } } }],
-                            type: "JWT",
-                        },
-                    }).instance();
+                        const sub = generate({
+                            charset: "alphabetic",
+                        });
 
-                    // @ts-ignore
-                    const neoSchema: Neo4jGraphQL = {
-                        nodes: [movieIdNode, node],
-                    };
+                        // @ts-ignore
+                        const context: Context = { neoSchema };
+                        context.jwt = {
+                            sub,
+                        };
 
-                    const sub = generate({
-                        charset: "alphabetic",
-                    });
+                        const result = createAuthAndParams({
+                            context,
+                            entity: node,
+                            where: { node, varName: "this" },
+                        });
 
-                    // @ts-ignore
-                    const context: Context = { neoSchema };
-                    context.jwt = {
-                        sub,
-                    };
-
-                    const result = createAuthAndParams({
-                        context,
-                        entity: node,
-                        where: { node, varName: "this" },
-                    });
-
-                    expect(trimmer(result[0])).toEqual(
-                        trimmer(`
+                        expect(trimmer(result[0])).toEqual(
+                            trimmer(`
                         EXISTS((this)-[:HAS_ID]->(:MovieID)) AND ANY(ids IN [(this)-[:HAS_ID]->(ids:MovieID) | ids] WHERE ids.id IS NOT NULL AND ids.id = $this_auth_where0_ids_INCLUDES_id)
                     `)
-                    );
+                        );
 
-                    expect(result[1]).toMatchObject({
-                        this_auth_where0_ids_INCLUDES_id: sub,
+                        expect(result[1]).toMatchObject({
+                            this_auth_where0_ids_INCLUDES_id: sub,
+                        });
                     });
-                });
 
-                test("_NOT_INCLUDES", () => {
-                    const idField: PrimitiveField = {
-                        fieldName: "id",
-                        typeMeta: {
-                            name: "ID",
-                            array: false,
-                            required: false,
-                            pretty: "String",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
+                    test("_NOT_INCLUDES", () => {
+                        const idField: PrimitiveField = {
+                            fieldName: "id",
+                            typeMeta: {
+                                name: "ID",
+                                array: false,
+                                required: false,
+                                pretty: "String",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
                                 },
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                            otherDirectives: [],
+                            arguments: [],
+                        };
 
-                    const idsField: RelationField = {
-                        fieldName: "ids",
-                        direction: "OUT",
-                        type: "HAS_ID",
-                        typeMeta: {
+                        const idsField: RelationField = {
+                            fieldName: "ids",
+                            direction: "OUT",
+                            type: "HAS_ID",
+                            typeMeta: {
+                                name: "MovieID",
+                                array: true,
+                                required: false,
+                                pretty: "MovieID",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                },
+                            },
+                            otherDirectives: [],
+                            arguments: [],
+                        };
+
+                        const movieIdNode = new NodeBuilder({
                             name: "MovieID",
-                            array: true,
-                            required: false,
-                            pretty: "MovieID",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
+                            relationFields: [],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [idField],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                        }).instance();
+
+                        const node = new NodeBuilder({
+                            name: "Movie",
+                            relationFields: [idsField],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                            auth: {
+                                rules: [{ where: { ids_NOT_INCLUDES: { id: "$jwt.sub" } } }],
+                                type: "JWT",
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                        }).instance();
 
-                    const movieIdNode = new NodeBuilder({
-                        name: "MovieID",
-                        relationFields: [],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [idField],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                    }).instance();
+                        // @ts-ignore
+                        const neoSchema: Neo4jGraphQL = {
+                            nodes: [movieIdNode, node],
+                        };
 
-                    const node = new NodeBuilder({
-                        name: "Movie",
-                        relationFields: [idsField],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                        auth: {
-                            rules: [{ where: { ids_NOT_INCLUDES: { id: "$jwt.sub" } } }],
-                            type: "JWT",
-                        },
-                    }).instance();
+                        const sub = generate({
+                            charset: "alphabetic",
+                        });
 
-                    // @ts-ignore
-                    const neoSchema: Neo4jGraphQL = {
-                        nodes: [movieIdNode, node],
-                    };
+                        // @ts-ignore
+                        const context: Context = { neoSchema };
+                        context.jwt = {
+                            sub,
+                        };
 
-                    const sub = generate({
-                        charset: "alphabetic",
-                    });
+                        const result = createAuthAndParams({
+                            context,
+                            entity: node,
+                            where: { node, varName: "this" },
+                        });
 
-                    // @ts-ignore
-                    const context: Context = { neoSchema };
-                    context.jwt = {
-                        sub,
-                    };
-
-                    const result = createAuthAndParams({
-                        context,
-                        entity: node,
-                        where: { node, varName: "this" },
-                    });
-
-                    expect(trimmer(result[0])).toEqual(
-                        trimmer(`
+                        expect(trimmer(result[0])).toEqual(
+                            trimmer(`
                         EXISTS((this)-[:HAS_ID]->(:MovieID)) AND NOT ANY(ids IN [(this)-[:HAS_ID]->(ids:MovieID) | ids] WHERE ids.id IS NOT NULL AND ids.id = $this_auth_where0_ids_NOT_INCLUDES_id)
                     `)
-                    );
+                        );
 
-                    expect(result[1]).toMatchObject({
-                        this_auth_where0_ids_NOT_INCLUDES_id: sub,
+                        expect(result[1]).toMatchObject({
+                            this_auth_where0_ids_NOT_INCLUDES_id: sub,
+                        });
                     });
-                });
 
-                test("_EVERY", () => {
-                    const idField: PrimitiveField = {
-                        fieldName: "id",
-                        typeMeta: {
-                            name: "ID",
-                            array: false,
-                            required: false,
-                            pretty: "String",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
+                    test("_EVERY", () => {
+                        const idField: PrimitiveField = {
+                            fieldName: "id",
+                            typeMeta: {
+                                name: "ID",
+                                array: false,
+                                required: false,
+                                pretty: "String",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
                                 },
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                            otherDirectives: [],
+                            arguments: [],
+                        };
 
-                    const idsField: RelationField = {
-                        fieldName: "ids",
-                        direction: "OUT",
-                        type: "HAS_ID",
-                        typeMeta: {
+                        const idsField: RelationField = {
+                            fieldName: "ids",
+                            direction: "OUT",
+                            type: "HAS_ID",
+                            typeMeta: {
+                                name: "MovieID",
+                                array: true,
+                                required: false,
+                                pretty: "MovieID",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                },
+                            },
+                            otherDirectives: [],
+                            arguments: [],
+                        };
+
+                        const movieIdNode = new NodeBuilder({
                             name: "MovieID",
-                            array: true,
-                            required: false,
-                            pretty: "MovieID",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
+                            relationFields: [],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [idField],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                        }).instance();
+
+                        const node = new NodeBuilder({
+                            name: "Movie",
+                            relationFields: [idsField],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                            auth: {
+                                rules: [{ where: { ids_EVERY: { id: "$jwt.sub" } } }],
+                                type: "JWT",
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                        }).instance();
 
-                    const movieIdNode = new NodeBuilder({
-                        name: "MovieID",
-                        relationFields: [],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [idField],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                    }).instance();
+                        // @ts-ignore
+                        const neoSchema: Neo4jGraphQL = {
+                            nodes: [movieIdNode, node],
+                        };
 
-                    const node = new NodeBuilder({
-                        name: "Movie",
-                        relationFields: [idsField],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                        auth: {
-                            rules: [{ where: { ids_EVERY: { id: "$jwt.sub" } } }],
-                            type: "JWT",
-                        },
-                    }).instance();
+                        const sub = generate({
+                            charset: "alphabetic",
+                        });
 
-                    // @ts-ignore
-                    const neoSchema: Neo4jGraphQL = {
-                        nodes: [movieIdNode, node],
-                    };
+                        // @ts-ignore
+                        const context: Context = { neoSchema };
+                        context.jwt = {
+                            sub,
+                        };
 
-                    const sub = generate({
-                        charset: "alphabetic",
-                    });
+                        const result = createAuthAndParams({
+                            context,
+                            entity: node,
+                            where: { node, varName: "this" },
+                        });
 
-                    // @ts-ignore
-                    const context: Context = { neoSchema };
-                    context.jwt = {
-                        sub,
-                    };
-
-                    const result = createAuthAndParams({
-                        context,
-                        entity: node,
-                        where: { node, varName: "this" },
-                    });
-
-                    expect(trimmer(result[0])).toEqual(
-                        trimmer(`
+                        expect(trimmer(result[0])).toEqual(
+                            trimmer(`
                         EXISTS((this)-[:HAS_ID]->(:MovieID)) AND ALL(ids IN [(this)-[:HAS_ID]->(ids:MovieID) | ids] WHERE ids.id IS NOT NULL AND ids.id = $this_auth_where0_ids_EVERY_id)
                     `)
-                    );
+                        );
 
-                    expect(result[1]).toMatchObject({
-                        this_auth_where0_ids_EVERY_id: sub,
+                        expect(result[1]).toMatchObject({
+                            this_auth_where0_ids_EVERY_id: sub,
+                        });
                     });
-                });
 
-                test("_NOT_EVERY", () => {
-                    const idField: PrimitiveField = {
-                        fieldName: "id",
-                        typeMeta: {
-                            name: "ID",
-                            array: false,
-                            required: false,
-                            pretty: "String",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
+                    test("_NOT_EVERY", () => {
+                        const idField: PrimitiveField = {
+                            fieldName: "id",
+                            typeMeta: {
+                                name: "ID",
+                                array: false,
+                                required: false,
+                                pretty: "String",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
                                 },
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                            otherDirectives: [],
+                            arguments: [],
+                        };
 
-                    const idsField: RelationField = {
-                        fieldName: "ids",
-                        direction: "OUT",
-                        type: "HAS_ID",
-                        typeMeta: {
+                        const idsField: RelationField = {
+                            fieldName: "ids",
+                            direction: "OUT",
+                            type: "HAS_ID",
+                            typeMeta: {
+                                name: "MovieID",
+                                array: true,
+                                required: false,
+                                pretty: "MovieID",
+                                input: {
+                                    where: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    create: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                    update: {
+                                        type: "String",
+                                        pretty: "String",
+                                    },
+                                },
+                            },
+                            otherDirectives: [],
+                            arguments: [],
+                        };
+
+                        const movieIdNode = new NodeBuilder({
                             name: "MovieID",
-                            array: true,
-                            required: false,
-                            pretty: "MovieID",
-                            input: {
-                                where: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                create: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
-                                update: {
-                                    type: "String",
-                                    pretty: "String",
-                                },
+                            relationFields: [],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [idField],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                        }).instance();
+
+                        const node = new NodeBuilder({
+                            name: "Movie",
+                            relationFields: [idsField],
+                            cypherFields: [],
+                            enumFields: [],
+                            scalarFields: [],
+                            primitiveFields: [],
+                            temporalFields: [],
+                            interfaceFields: [],
+                            objectFields: [],
+                            pointFields: [],
+                            unionFields: [],
+                            connectionFields: [],
+                            ignoredFields: [],
+                            interfaces: [],
+                            otherDirectives: [],
+                            auth: {
+                                rules: [{ where: { ids_NOT_EVERY: { id: "$jwt.sub" } } }],
+                                type: "JWT",
                             },
-                        },
-                        otherDirectives: [],
-                        arguments: [],
-                    };
+                        }).instance();
 
-                    const movieIdNode = new NodeBuilder({
-                        name: "MovieID",
-                        relationFields: [],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [idField],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                    }).instance();
+                        // @ts-ignore
+                        const neoSchema: Neo4jGraphQL = {
+                            nodes: [movieIdNode, node],
+                        };
 
-                    const node = new NodeBuilder({
-                        name: "Movie",
-                        relationFields: [idsField],
-                        cypherFields: [],
-                        enumFields: [],
-                        scalarFields: [],
-                        primitiveFields: [],
-                        temporalFields: [],
-                        interfaceFields: [],
-                        objectFields: [],
-                        pointFields: [],
-                        unionFields: [],
-                        connectionFields: [],
-                        ignoredFields: [],
-                        interfaces: [],
-                        otherDirectives: [],
-                        auth: {
-                            rules: [{ where: { ids_NOT_EVERY: { id: "$jwt.sub" } } }],
-                            type: "JWT",
-                        },
-                    }).instance();
+                        const sub = generate({
+                            charset: "alphabetic",
+                        });
 
-                    // @ts-ignore
-                    const neoSchema: Neo4jGraphQL = {
-                        nodes: [movieIdNode, node],
-                    };
+                        // @ts-ignore
+                        const context: Context = { neoSchema };
+                        context.jwt = {
+                            sub,
+                        };
 
-                    const sub = generate({
-                        charset: "alphabetic",
-                    });
+                        const result = createAuthAndParams({
+                            context,
+                            entity: node,
+                            where: { node, varName: "this" },
+                        });
 
-                    // @ts-ignore
-                    const context: Context = { neoSchema };
-                    context.jwt = {
-                        sub,
-                    };
-
-                    const result = createAuthAndParams({
-                        context,
-                        entity: node,
-                        where: { node, varName: "this" },
-                    });
-
-                    expect(trimmer(result[0])).toEqual(
-                        trimmer(`
+                        expect(trimmer(result[0])).toEqual(
+                            trimmer(`
                         EXISTS((this)-[:HAS_ID]->(:MovieID)) AND NOT ALL(ids IN [(this)-[:HAS_ID]->(ids:MovieID) | ids] WHERE ids.id IS NOT NULL AND ids.id = $this_auth_where0_ids_NOT_EVERY_id)
                     `)
-                    );
+                        );
 
-                    expect(result[1]).toMatchObject({
-                        this_auth_where0_ids_NOT_EVERY_id: sub,
+                        expect(result[1]).toMatchObject({
+                            this_auth_where0_ids_NOT_EVERY_id: sub,
+                        });
                     });
                 });
             });
